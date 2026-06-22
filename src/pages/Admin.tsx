@@ -98,7 +98,59 @@ export default function Admin() {
   const [editingItemID, setEditingItemID] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  // Custom Delete Confirm modal layout state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: "project" | "blog" | "case" | "service" | "skill" | "lead" | null;
+    id: string;
+    title: string;
+  }>({
+    isOpen: false,
+    type: null,
+    id: "",
+    title: ""
+  });
+
+  const requestDeletion = (type: "project" | "blog" | "case" | "service" | "skill" | "lead", id: string, title: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type,
+      id,
+      title
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { type, id } = deleteConfirm;
+    if (!id || !type) return;
+    try {
+      if (type === "project") {
+        await deleteProject(id);
+      } else if (type === "blog") {
+        await deleteBlogPost(id);
+      } else if (type === "case") {
+        await deleteCaseStudy(id);
+      } else if (type === "service") {
+        await deleteService(id);
+      } else if (type === "skill") {
+        await deleteSkill(id);
+      } else if (type === "lead") {
+        await deleteContactMessage(id);
+      }
+      loadCmsData();
+    } catch (err) {
+      console.error("Error executing delete:", err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, type: null, id: "", title: "" });
+    }
+  };
+
   // Forms state variables
+  // Uploaded Image base64 caching states
+  const [projUploadImg, setProjUploadImg] = useState("");
+  const [blogUploadImg, setBlogUploadImg] = useState("");
+  const [caseUploadImg, setCaseUploadImg] = useState("");
+
   // Project Form
   const [projTitle, setProjTitle] = useState("");
   const [projType, setProjType] = useState("Web Application");
@@ -234,7 +286,7 @@ export default function Admin() {
       results: projResults,
       demoUrl: projDemo,
       githubUrl: projGit,
-      images: ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200"],
+      images: projUploadImg ? [projUploadImg] : ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200"],
       techStack: projStack.split(",").map(t => t.trim()).filter(Boolean),
       category: projCategory,
       featured: projFeatured,
@@ -268,6 +320,7 @@ export default function Admin() {
     setProjStack("");
     setProjCategory("Workflow Automation");
     setProjFeatured(false);
+    setProjUploadImg("");
     setEditingItemID(null);
     setShowCreateForm(false);
   };
@@ -285,15 +338,14 @@ export default function Admin() {
     setProjStack(p.techStack?.join(", ") || "");
     setProjCategory(p.category || "Workflow Automation");
     setProjFeatured(p.featured || false);
+    setProjUploadImg(p.images?.[0] || "");
     setEditingItemID(p.id || null);
     setShowCreateForm(true);
   };
 
-  const handleDeleteProj = async (id: string) => {
-    if (confirm("Delete this project from portfolio?")) {
-      await deleteProject(id);
-      loadCmsData();
-    }
+  const handleDeleteProj = (id: string) => {
+    const item = projects.find(x => x.id === id);
+    requestDeletion("project", id, item?.title || "Project Asset");
   };
 
   // Blog Add / Update
@@ -306,7 +358,7 @@ export default function Admin() {
       slug: blogSlug,
       summary: blogSummary,
       content: blogContent,
-      coverImage: blogImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200",
+      coverImage: blogUploadImg || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200",
       category: blogCat,
       tags: blogTags.split(",").map(t => t.trim()).filter(Boolean),
       readingTime: blogReadingTime,
@@ -334,6 +386,7 @@ export default function Admin() {
     setBlogSummary("");
     setBlogContent("");
     setBlogImage("");
+    setBlogUploadImg("");
     setBlogCat("Workflow Automation");
     setBlogTags("");
     setBlogReadingTime("4 min read");
@@ -348,6 +401,7 @@ export default function Admin() {
     setBlogSummary(b.summary);
     setBlogContent(b.content);
     setBlogImage(b.coverImage);
+    setBlogUploadImg(b.coverImage || "");
     setBlogCat(b.category);
     setBlogTags(b.tags?.join(", ") || "");
     setBlogReadingTime(b.readingTime);
@@ -356,11 +410,9 @@ export default function Admin() {
     setShowCreateForm(true);
   };
 
-  const handleDeleteBlog = async (id: string) => {
-    if (confirm("Delete this blog post?")) {
-      await deleteBlogPost(id);
-      loadCmsData();
-    }
+  const handleDeleteBlog = (id: string) => {
+    const item = blogs.find(x => x.id === id);
+    requestDeletion("blog", id, item?.title || "Blog Article");
   };
 
   // Case Study Add / Update
@@ -378,7 +430,7 @@ export default function Admin() {
       process: caseProcess,
       results: caseResults,
       lessons: caseLessons,
-      coverImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200",
+      coverImage: caseUploadImg || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200",
       images: [],
       techStack: caseStack.split(",").map(t => t.trim()).filter(Boolean),
       createdAt: new Date().toISOString()
@@ -408,6 +460,7 @@ export default function Admin() {
     setCaseResults("");
     setCaseLessons("");
     setCaseStack("");
+    setCaseUploadImg("");
     setEditingItemID(null);
     setShowCreateForm(false);
   };
@@ -423,15 +476,14 @@ export default function Admin() {
     setCaseResults(c.results);
     setCaseLessons(c.lessons || "");
     setCaseStack(c.techStack?.join(", ") || "");
+    setCaseUploadImg(c.coverImage || "");
     setEditingItemID(c.id || null);
     setShowCreateForm(true);
   };
 
-  const handleDeleteCase = async (id: string) => {
-    if (confirm("Delete case study?")) {
-      await deleteCaseStudy(id);
-      loadCmsData();
-    }
+  const handleDeleteCase = (id: string) => {
+    const item = caseStudies.find(x => x.id === id);
+    requestDeletion("case", id, item?.title || "Case Log");
   };
 
   // Service Save
@@ -484,11 +536,9 @@ export default function Admin() {
     setShowCreateForm(true);
   };
 
-  const handleDeleteService = async (id: string) => {
-    if (confirm("Delete service structure?")) {
-      await deleteService(id);
-      loadCmsData();
-    }
+  const handleDeleteService = (id: string) => {
+    const item = services.find(x => x.id === id);
+    requestDeletion("service", id, item?.title || "Service Struct");
   };
 
   // Skill Save
@@ -532,11 +582,9 @@ export default function Admin() {
     setShowCreateForm(true);
   };
 
-  const handleDeleteSkill = async (id: string) => {
-    if (confirm("Delete skill?")) {
-      await deleteSkill(id);
-      loadCmsData();
-    }
+  const handleDeleteSkill = (id: string) => {
+    const item = skills.find(x => x.id === id);
+    requestDeletion("skill", id, item?.name || "Skill Entry");
   };
 
   // Leads Handlers
@@ -546,11 +594,9 @@ export default function Admin() {
     loadCmsData();
   };
 
-  const handleDeleteLead = async (id: string) => {
-    if (confirm("Delete this message?")) {
-      await deleteContactMessage(id);
-      loadCmsData();
-    }
+  const handleDeleteLead = (id: string) => {
+    const item = leads.find(x => x.id === id);
+    requestDeletion("lead", id, item ? `${item.name}'s contact message` : "Client Message");
   };
 
   if (authLoading) {
@@ -873,6 +919,63 @@ export default function Admin() {
                   />
                 </div>
 
+                {/* Drag and Drop Image Upload */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-white text-xs font-mono uppercase tracking-wider">Representation Cover Asset</span>
+                  <div 
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-brand-cyan/60"); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-brand-cyan/60"); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-brand-cyan/60");
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setProjUploadImg(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    onClick={() => document.getElementById("proj-file-input")?.click()}
+                    className="border-2 border-dashed border-white/10 hover:border-brand-cyan/40 rounded-xl p-6 text-center cursor-pointer transition-all bg-neutral-900/40 relative flex flex-col items-center justify-center gap-2 group"
+                  >
+                    <input 
+                      type="file" 
+                      id="proj-file-input" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setProjUploadImg(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {projUploadImg ? (
+                      <div className="relative">
+                        <img src={projUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); setProjUploadImg(""); }}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full text-xs shadow-md transition-colors"
+                        >
+                          <X className="w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Layers className="w-8 h-8 text-gray-500 group-hover:text-brand-cyan transition-colors" />
+                        <p className="text-gray-400 text-xs text-center">Drag and drop any representation asset here, or click to open native file browser.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -986,6 +1089,64 @@ export default function Admin() {
                     className="bg-neutral-900 border border-white/8 rounded-lg p-2.5 text-xs text-white"
                   />
                 </div>
+
+                {/* Drag and Drop Image Upload */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-white text-xs font-mono uppercase tracking-wider">Article Cover Image</span>
+                  <div 
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-brand-cyan/60"); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-brand-cyan/60"); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-brand-cyan/60");
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setBlogUploadImg(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    onClick={() => document.getElementById("blog-file-input")?.click()}
+                    className="border-2 border-dashed border-white/10 hover:border-brand-cyan/40 rounded-xl p-6 text-center cursor-pointer transition-all bg-neutral-900/40 relative flex flex-col items-center justify-center gap-2 group"
+                  >
+                    <input 
+                      type="file" 
+                      id="blog-file-input" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setBlogUploadImg(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {blogUploadImg ? (
+                      <div className="relative">
+                        <img src={blogUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); setBlogUploadImg(""); }}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full text-xs shadow-md transition-colors"
+                        >
+                          <X className="w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Layers className="w-8 h-8 text-gray-500 group-hover:text-brand-cyan transition-colors" />
+                        <p className="text-gray-400 text-xs text-center">Drag and drop blog cover image here, or click to open native file browser.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex gap-4">
                   <select
                     value={blogStatus}
@@ -1119,6 +1280,64 @@ export default function Admin() {
                   onChange={(e) => setCaseStack(e.target.value)}
                   className="bg-neutral-900 border border-white/8 rounded-lg p-2.5 text-xs text-white"
                 />
+
+                {/* Drag and Drop Image Upload */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-white text-xs font-mono uppercase tracking-wider">Case Study Cover image</span>
+                  <div 
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-brand-cyan/60"); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-brand-cyan/60"); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-brand-cyan/60");
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setCaseUploadImg(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    onClick={() => document.getElementById("case-file-input")?.click()}
+                    className="border-2 border-dashed border-white/10 hover:border-brand-cyan/40 rounded-xl p-6 text-center cursor-pointer transition-all bg-neutral-900/40 relative flex flex-col items-center justify-center gap-2 group"
+                  >
+                    <input 
+                      type="file" 
+                      id="case-file-input" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setCaseUploadImg(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {caseUploadImg ? (
+                      <div className="relative">
+                        <img src={caseUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); setCaseUploadImg(""); }}
+                          className="absolute -top-2 -right-2 bg-red-400 hover:bg-red-500 text-white p-1 rounded-full text-xs shadow-md transition-colors"
+                        >
+                          <X className="w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Layers className="w-8 h-8 text-gray-500 group-hover:text-brand-cyan transition-colors" />
+                        <p className="text-gray-400 text-xs text-center">Drag and drop case study banner image here, or click to open native file browser.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <button type="submit" className="py-2.5 px-5 bg-brand-cyan text-dark-bg font-bold rounded-lg text-xs self-start">
                   Save Case Log
                 </button>
@@ -1393,6 +1612,42 @@ export default function Admin() {
         )}
 
       </main>
+
+      {/* Custom Non-blocking Deletion Confirmation Overlays (Iframe Failsafe) */}
+      {deleteConfirm.isOpen && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-[#121214] border border-white/10 max-w-sm w-full rounded-2xl p-6 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-400 border-b border-white/5 pb-3">
+              <Trash2 className="w-5 h-5" />
+              <span className="font-sans font-bold tracking-tight text-white">Confirm Deletion</span>
+            </div>
+            
+            <div className="text-gray-300 text-xs leading-relaxed py-1">
+              Are you sure you want to permanently delete this {deleteConfirm.type === "lead" ? "contact message" : deleteConfirm.type}?
+              <div className="mt-2 bg-[#1a1a1e] border border-white/5 p-3 rounded-lg text-white font-mono text-[11px] truncate">
+                {deleteConfirm.title}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm({ isOpen: false, type: null, id: "", title: "" })}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-mono font-bold transition-colors cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

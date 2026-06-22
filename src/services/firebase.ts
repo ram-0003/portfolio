@@ -74,12 +74,63 @@ function testConnection() {
 }
 testConnection();
 
-// Dynamic Seeding Module: Seeds the data on-demand if collections are empty.
-// This guarantees that the portfolio displays content out-of-the-box, but
-// is completely CMS-editable.
-// Checking all collections concurrently saves massive loading roundtrip latency.
+// Helper to create clean, human-readable slugified string IDs for Firestore documents
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, "-")           // Replace spaces with -
+    .replace(/[^\w\-]+/g, "")       // Remove all non-word chars except -
+    .replace(/\-\-+/g, "-")         // Replace multiple - with single -
+    .trim();
+}
+
+// Active Database Duplicate Purge Module
+async function cleanDuplicateDocs(collectionName: string, identityField: string): Promise<void> {
+  try {
+    const snap = await getDocs(collection(db, collectionName));
+    if (snap.empty) return;
+    
+    const seen = new Map<string, string>(); // key -> docId
+    const deletePromises: Promise<any>[] = [];
+    
+    // Sort so we can keep older or deterministic entries if available, or just standard processing
+    snap.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      const identityValue = (data[identityField] || "").toString().toLowerCase().trim();
+      if (!identityValue) return;
+      
+      if (seen.has(identityValue)) {
+        // Delete redundant duplicate document matching on title/name
+        deletePromises.push(deleteDoc(doc(db, collectionName, docSnap.id)));
+        console.log(`[Self-Healing] Deleting duplicate in collection "${collectionName}": ID is "${docSnap.id}"`);
+      } else {
+        seen.set(identityValue, docSnap.id);
+      }
+    });
+    
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+      console.log(`[Self-Healing] Successfully purged ${deletePromises.length} duplicates from Firestore folder "${collectionName}".`);
+    }
+  } catch (err) {
+    console.warn(`[Self-Healing] Duplicates check skipped or restricted for "${collectionName}":`, err);
+  }
+}
+
+// Dynamic Idempotent Seeding Module: Seeds the data on-demand if collections are empty,
+// and heals existing collection tables by purging any duplicate copies of default data.
 export async function seedDatabaseIfEmpty() {
   try {
+    // 1. Run automatic de-duplication first to cleanse redundant random-id copies
+    await Promise.all([
+      cleanDuplicateDocs("services", "title"),
+      cleanDuplicateDocs("projects", "title"),
+      cleanDuplicateDocs("caseStudies", "title"),
+      cleanDuplicateDocs("blogPosts", "title"),
+      cleanDuplicateDocs("skills", "name")
+    ]);
+
     const siteSettingsRef = doc(db, "siteSettings", "default");
     
     const [
@@ -108,54 +159,61 @@ export async function seedDatabaseIfEmpty() {
       );
     }
 
+    // 2. Load and create using Idempotent write keys (setDoc with Deterministic Slug IDs)
+    // This perfectly prevents race condition duplicates of standard items in future boots.
     if (servicesSnap.empty) {
       defaultServices.forEach(service => {
+        const docId = slugify(service.title);
         writePromises.push(
-          addDoc(collection(db, "services"), service)
+          setDoc(doc(db, "services", docId), service)
         );
       });
-      console.log("Seeding Schedule: services loaded into Firestore queue.");
+      console.log("Seeding Schedule: services loaded into Firestore.");
     }
 
     if (projectsSnap.empty) {
       defaultProjects.forEach(project => {
+        const docId = slugify(project.title);
         writePromises.push(
-          addDoc(collection(db, "projects"), project)
+          setDoc(doc(db, "projects", docId), project)
         );
       });
-      console.log("Seeding Schedule: projects loaded into Firestore queue.");
+      console.log("Seeding Schedule: projects loaded into Firestore.");
     }
 
     if (caseStudiesSnap.empty) {
       defaultCaseStudies.forEach(study => {
+        const docId = slugify(study.title);
         writePromises.push(
-          addDoc(collection(db, "caseStudies"), study)
+          setDoc(doc(db, "caseStudies", docId), study)
         );
       });
-      console.log("Seeding Schedule: caseStudies loaded into Firestore queue.");
+      console.log("Seeding Schedule: caseStudies loaded into Firestore.");
     }
 
     if (blogSnap.empty) {
       defaultBlogPosts.forEach(post => {
+        const docId = slugify(post.title);
         writePromises.push(
-          addDoc(collection(db, "blogPosts"), post)
+          setDoc(doc(db, "blogPosts", docId), post)
         );
       });
-      console.log("Seeding Schedule: blogPosts loaded into Firestore queue.");
+      console.log("Seeding Schedule: blogPosts loaded into Firestore.");
     }
 
     if (skillsSnap.empty) {
       defaultSkills.forEach(skill => {
+        const docId = slugify(skill.name);
         writePromises.push(
-          addDoc(collection(db, "skills"), skill)
+          setDoc(doc(db, "skills", docId), skill)
         );
       });
-      console.log("Seeding Schedule: skills loaded into Firestore queue.");
+      console.log("Seeding Schedule: skills loaded into Firestore.");
     }
 
     if (writePromises.length > 0) {
       await Promise.all(writePromises);
-      console.log("All collections seeded successfully.");
+      console.log("All missing collections seeded with deterministic IDs successfully.");
     }
 
   } catch (e) {
@@ -191,7 +249,15 @@ export async function getServices(): Promise<Service[]> {
     try {
       const snap = await getDocs(query(collection(db, "services"), orderBy("order", "asc")));
       if (!snap.empty) {
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Service));
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Service));
+        const seen = new Set<string>();
+        return items.filter(item => {
+          const key = item.title?.toLowerCase().trim();
+          if (!key) return true;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
     } catch (e) {
       console.error("Firestore service exception:", e);
@@ -220,7 +286,15 @@ export async function getProjects(): Promise<Project[]> {
     try {
       const snap = await getDocs(query(collection(db, "projects"), orderBy("createdAt", "desc")));
       if (!snap.empty) {
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+        const seen = new Set<string>();
+        return items.filter(item => {
+          const key = item.title?.toLowerCase().trim();
+          if (!key) return true;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
     } catch (e) {
       console.error("Firestore projects exception:", e);
@@ -249,7 +323,15 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
     try {
       const snap = await getDocs(query(collection(db, "blogPosts"), orderBy("createdAt", "desc")));
       if (!snap.empty) {
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as BlogPost));
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as BlogPost));
+        const seen = new Set<string>();
+        return items.filter(item => {
+          const key = item.title?.toLowerCase().trim();
+          if (!key) return true;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
     } catch (e) {
       console.error("Firestore blogs exception:", e);
@@ -278,7 +360,15 @@ export async function getCaseStudies(): Promise<CaseStudy[]> {
     try {
       const snap = await getDocs(query(collection(db, "caseStudies"), orderBy("createdAt", "desc")));
       if (!snap.empty) {
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as CaseStudy));
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as CaseStudy));
+        const seen = new Set<string>();
+        return items.filter(item => {
+          const key = item.title?.toLowerCase().trim();
+          if (!key) return true;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
     } catch (e) {
       console.error("Firestore case studies exception:", e);
@@ -307,7 +397,15 @@ export async function getSkills(): Promise<Skill[]> {
     try {
       const snap = await getDocs(query(collection(db, "skills"), orderBy("order", "asc")));
       if (!snap.empty) {
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Skill));
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Skill));
+        const seen = new Set<string>();
+        return items.filter(item => {
+          const key = item.name?.toLowerCase().trim();
+          if (!key) return true;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
       }
     } catch (e) {
       console.error("Firestore skills exception:", e);

@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { auth } from "../services/firebase";
+import { auth, getSiteSettings } from "../services/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { Menu, X, Command, Terminal, LogOut, Code, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { SiteSettings } from "../types";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const location = useLocation();
 
   // Theme hook
@@ -33,6 +35,10 @@ export default function Navbar() {
       setUser(u);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    getSiteSettings().then(setSettings).catch(console.error);
   }, []);
 
   const navLinks = [
@@ -61,15 +67,24 @@ export default function Navbar() {
     return location.pathname.startsWith(path);
   };
 
+  const displayName = settings?.name || "Ramachandran S";
+  const firstName = displayName.split(" ")[0];
+  const restOfName = displayName.includes(" ") ? displayName.substring(firstName.length).trim() : "";
+  const initialLetter = displayName.charAt(0);
+
   return (
     <header className="sticky top-0 z-50 w-full px-4 pt-4 pb-2">
-      <nav className="mx-auto max-w-7xl rounded-full bg-dark-card/65 backdrop-blur-md border border-white/8 p-2 px-6 flex items-center justify-between shadow-2xl">
+      <nav className="mx-auto max-w-[1580px] w-full rounded-full bg-dark-card/65 backdrop-blur-md border border-white/8 p-2 px-6 flex items-center justify-between shadow-2xl">
         <Link to="/" className="flex items-center gap-3 font-display font-medium text-lg leading-none tracking-tight group">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/20 duration-300 group-hover:scale-105">
-            R
+            {initialLetter}
           </div>
           <span className="text-white group-hover:text-brand-cyan transition-colors font-semibold">
-            Ramachandran <span className="text-brand-cyan font-mono text-xs ml-1 border border-brand-cyan/20 px-1.5 py-0.5 rounded-full bg-brand-cyan/5">S.</span>
+            {firstName} {restOfName && (
+              <span className="text-brand-cyan font-mono text-xs ml-1 border border-brand-cyan/20 px-1.5 py-0.5 rounded-full bg-brand-cyan/5">
+                {restOfName}
+              </span>
+            )}
           </span>
         </Link>
 

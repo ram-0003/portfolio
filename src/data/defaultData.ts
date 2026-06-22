@@ -9,7 +9,12 @@ export const defaultSiteSettings: SiteSettings = {
   phone: "+91 9080347710",
   whatsapp: "+91 9080347710",
   linkedin: "https://www.linkedin.com/in/ramchandrans/",
-  github: "https://github.com/ramachandran-s"
+  github: "https://github.com/ramachandran-s",
+  role: "Automation & Web Systems Architect",
+  completedProjects: "45+",
+  processesAutomated: "110+",
+  techStackModules: "24+",
+  hoursShaved: "340h"
 };
 
 export const defaultServices: Service[] = [

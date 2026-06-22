@@ -90,6 +90,12 @@ export interface SiteSettings {
   whatsapp: string;
   linkedin: string;
   github: string;
+  role?: string;
+  profileImage?: string;
+  completedProjects?: string;
+  processesAutomated?: string;
+  techStackModules?: string;
+  hoursShaved?: string;
 }
 
 export interface SeoSettings {

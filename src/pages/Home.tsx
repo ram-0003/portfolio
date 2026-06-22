@@ -39,10 +39,10 @@ export default function Home() {
   }, []);
 
   const stats = [
-    { label: "Completed Projects", value: "45+", icon: FolderOpen },
-    { label: "Processes Automated", value: "110+", icon: Workflow },
-    { label: "Tech Stack Modules", value: "24+", icon: Code },
-    { label: "Hours Shaved / Month", value: "340h", icon: Zap }
+    { label: "Completed Projects", value: settings?.completedProjects || "45+", icon: FolderOpen },
+    { label: "Processes Automated", value: settings?.processesAutomated || "110+", icon: Workflow },
+    { label: "Tech Stack Modules", value: settings?.techStackModules || "24+", icon: Code },
+    { label: "Hours Shaved / Month", value: settings?.hoursShaved || "340h", icon: Zap }
   ];
 
   const technologies = [
@@ -116,8 +116,8 @@ export default function Home() {
             
             <div className="w-full h-full rounded-[24px] overflow-hidden border border-white/5 relative bg-[#09090b]">
               <img
-                src={profilePhoto}
-                alt="Ramachandran S."
+                src={settings?.profileImage || profilePhoto}
+                alt={settings?.name || "Ramachandran S."}
                 className="w-full h-full object-cover grayscale-[10%] brightness-[96%] group-hover:scale-103 duration-700 transition-transform"
                 referrerPolicy="no-referrer"
               />
@@ -125,10 +125,10 @@ export default function Home() {
               {/* Elegant overlay badge with human-readable, professional typography */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/40 to-transparent p-5 pt-12 flex flex-col gap-1">
                 <div className="font-display font-medium text-xl text-white leading-tight tracking-tight">
-                  Ramachandran S.
+                  {settings?.name || "Ramachandran S."}
                 </div>
                 <div className="font-mono text-[10px] uppercase text-indigo-400 tracking-wider">
-                  Automation & Web Systems Architect
+                  {settings?.role || "Automation & Web Systems Architect"}
                 </div>
               </div>
             </div>

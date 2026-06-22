@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   auth, 
   getSiteSettings, 
+  updateSiteSettings,
   getProjects, 
   addProject, 
   updateProject, 
@@ -40,7 +41,8 @@ import {
   CaseStudy, 
   Service, 
   Skill, 
-  ContactMessage 
+  ContactMessage,
+  SiteSettings
 } from "../types";
 import { 
   Terminal, 
@@ -74,7 +76,28 @@ export default function Admin() {
   const [authError, setAuthError] = useState("");
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"dashboard" | "projects" | "blogs" | "studies" | "services" | "skills" | "leads">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "projects" | "blogs" | "studies" | "services" | "skills" | "leads" | "settings">("dashboard");
+
+  // Site Profile Settings edit controls
+  const [siteName, setSiteName] = useState("");
+  const [siteTitle, setSiteTitle] = useState("");
+  const [siteSubtitle, setSiteSubtitle] = useState("");
+  const [siteBio, setSiteBio] = useState("");
+  const [siteRole, setSiteRole] = useState("");
+  const [siteEmail, setSiteEmail] = useState("");
+  const [sitePhone, setSitePhone] = useState("");
+  const [siteWhatsapp, setSiteWhatsapp] = useState("");
+  const [siteLinkedin, setSiteLinkedin] = useState("");
+  const [siteGithub, setSiteGithub] = useState("");
+  const [siteProfileImg, setSiteProfileImg] = useState("");
+  const [siteCompletedProjects, setSiteCompletedProjects] = useState("");
+  const [siteProcessesAutomated, setSiteProcessesAutomated] = useState("");
+  const [siteTechStackModules, setSiteTechStackModules] = useState("");
+  const [siteHoursShaved, setSiteHoursShaved] = useState("");
+
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
 
   // Telemetry metrics
   const [metrics, setMetrics] = useState({
@@ -214,13 +237,14 @@ export default function Admin() {
 
   async function loadCmsData() {
     try {
-      const [p, b, c, s, k, l] = await Promise.all([
+      const [p, b, c, s, k, l, decodedSettings] = await Promise.all([
         getProjects(),
         getBlogPosts(),
         getCaseStudies(),
         getServices(),
         getSkills(),
-        getContactMessages().catch(() => [] as ContactMessage[]) // Fail proof if rules require permission initially
+        getContactMessages().catch(() => [] as ContactMessage[]), // Fail proof if rules require permission initially
+        getSiteSettings().catch(() => null)
       ]);
 
       setProjects(p);
@@ -229,6 +253,24 @@ export default function Admin() {
       setServices(s);
       setSkills(k);
       setLeads(l);
+
+      if (decodedSettings) {
+        setSiteName(decodedSettings.name || "");
+        setSiteTitle(decodedSettings.title || "");
+        setSiteSubtitle(decodedSettings.subtitle || "");
+        setSiteBio(decodedSettings.bio || "");
+        setSiteRole(decodedSettings.role || "");
+        setSiteEmail(decodedSettings.email || "");
+        setSitePhone(decodedSettings.phone || "");
+        setSiteWhatsapp(decodedSettings.whatsapp || "");
+        setSiteLinkedin(decodedSettings.linkedin || "");
+        setSiteGithub(decodedSettings.github || "");
+        setSiteProfileImg(decodedSettings.profileImage || "");
+        setSiteCompletedProjects(decodedSettings.completedProjects || "");
+        setSiteProcessesAutomated(decodedSettings.processesAutomated || "");
+        setSiteTechStackModules(decodedSettings.techStackModules || "");
+        setSiteHoursShaved(decodedSettings.hoursShaved || "");
+      }
 
       setMetrics({
         leadsCount: l.length,
@@ -599,6 +641,44 @@ export default function Admin() {
     requestDeletion("lead", id, item ? `${item.name}'s contact message` : "Client Message");
   };
 
+  // Save Site settings
+  const handleSaveSettings = async (e: FormEvent) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    setSettingsError("");
+    setSettingsSuccess(false);
+
+    const payload: SiteSettings = {
+      name: siteName,
+      title: siteTitle,
+      subtitle: siteSubtitle,
+      bio: siteBio,
+      email: siteEmail,
+      phone: sitePhone,
+      whatsapp: siteWhatsapp,
+      linkedin: siteLinkedin,
+      github: siteGithub,
+      role: siteRole,
+      profileImage: siteProfileImg,
+      completedProjects: siteCompletedProjects,
+      processesAutomated: siteProcessesAutomated,
+      techStackModules: siteTechStackModules,
+      hoursShaved: siteHoursShaved
+    };
+
+    try {
+      await updateSiteSettings(payload);
+      setSettingsSuccess(true);
+      setTimeout(() => setSettingsSuccess(false), 4000);
+      loadCmsData();
+    } catch (err) {
+      console.error("Save settings error:", err);
+      setSettingsError("Failed to save settings. Please try again.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -678,7 +758,7 @@ export default function Admin() {
 
   // ------------------- MAIN SECURED LAYOUT -------------------
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6 border-t border-white/5 min-h-[80vh] flex flex-col md:flex-row gap-8 relative z-10">
+    <div className="max-w-[1580px] w-full mx-auto px-6 py-6 border-t border-white/5 min-h-[80vh] flex flex-col md:flex-row gap-8 relative z-10">
       
       {/* Sidebar Control panels */}
       <aside className="w-full md:w-56 shrink-0 flex flex-col gap-4">
@@ -751,6 +831,15 @@ export default function Admin() {
                 {metrics.unreadLeads}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => { setActiveTab("settings"); setShowCreateForm(false); }}
+            className={`px-4 py-2.5 rounded-xl text-left font-display text-xs font-semibold shrink-0 cursor-pointer flex items-center gap-2 ${
+              activeTab === "settings" ? "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Profile Settings</span>
           </button>
         </div>
 
@@ -1609,6 +1698,304 @@ export default function Admin() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ------------------- TAB 8: SETTINGS ------------------- */}
+        {activeTab === "settings" && (
+          <form onSubmit={handleSaveSettings} className="flex flex-col gap-6 animate-fade-in">
+            <div className="border-b border-white/5 pb-4 flex justify-between items-center flex-wrap gap-4">
+              <div>
+                <h2 className="font-display font-bold text-xl text-white">Profile & Platform Settings</h2>
+                <p className="text-gray-500 text-xs font-mono">Bespoke branding customized for Ramachandran S. portfolio:</p>
+              </div>
+              <button
+                type="submit"
+                disabled={settingsSaving}
+                className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-display font-semibold text-xs tracking-wider uppercase transition-colors shadow-lg shadow-indigo-600/20 cursor-pointer"
+              >
+                {settingsSaving ? "Saving Config..." : "Save Settings"}
+              </button>
+            </div>
+
+            {settingsSuccess && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-semibold animate-pulse">
+                &bull; Success: Profile Configuration updated in Firestore securely!
+              </div>
+            )}
+
+            {settingsError && (
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-semibold">
+                &bull; Error: {settingsError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Profile image column */}
+              <div className="lg:col-span-4 flex flex-col gap-4">
+                <span className="font-mono text-[10px] uppercase text-gray-400 font-semibold">Profile Photo</span>
+                
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add("border-brand-cyan/60");
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove("border-brand-cyan/60");
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove("border-brand-cyan/60");
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setSiteProfileImg(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  onClick={() => document.getElementById("profile-file-input")?.click()}
+                  className="border-2 border-dashed border-white/10 hover:border-brand-cyan/40 rounded-3xl p-6 text-center cursor-pointer transition-all bg-neutral-900/40 relative flex flex-col items-center justify-center gap-3 aspect-square group overflow-hidden"
+                >
+                  <input 
+                    type="file" 
+                    id="profile-file-input" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setSiteProfileImg(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {siteProfileImg ? (
+                    <div className="absolute inset-0 w-full h-full">
+                      <img 
+                        src={siteProfileImg} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-mono text-white">
+                        Replace Photo
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-brand-cyan border border-white/8 transition-colors">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-display font-medium text-xs text-white">Drag & Drop Image</p>
+                        <p className="font-mono text-[9px] text-gray-500 mt-1">PNG, JPG or WebP up to 1MB</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {siteProfileImg && (
+                  <button
+                    type="button"
+                    onClick={() => setSiteProfileImg("")}
+                    className="text-center font-mono text-[10px] text-red-400 hover:text-red-300 py-1 cursor-pointer"
+                  >
+                    Remove and use Fallback Image
+                  </button>
+                )}
+              </div>
+
+              {/* Form entries */}
+              <div className="lg:col-span-8 flex flex-col gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5 font-sans">
+                    <label className="font-mono text-[10px] uppercase text-gray-400">Professional Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={siteName}
+                      onChange={(e) => setSiteName(e.target.value)}
+                      placeholder="e.g. Ramachandran S."
+                      className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none placeholder-gray-600"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 font-sans">
+                    <label className="font-mono text-[10px] uppercase text-gray-400">Technical Role</label>
+                    <input
+                      type="text"
+                      required
+                      value={siteRole}
+                      onChange={(e) => setSiteRole(e.target.value)}
+                      placeholder="e.g. Automation & Web Systems Architect"
+                      className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none placeholder-gray-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 font-sans">
+                  <label className="font-mono text-[10px] uppercase text-gray-400">Home Title Heading</label>
+                  <input
+                    type="text"
+                    required
+                    value={siteTitle}
+                    onChange={(e) => setSiteTitle(e.target.value)}
+                    placeholder="e.g. Building Web Applications & Automations That Replace Manual Work"
+                    className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none placeholder-gray-600"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 font-sans">
+                  <label className="font-mono text-[10px] uppercase text-gray-400">Sub-title Bio Statement</label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={siteSubtitle}
+                    onChange={(e) => setSiteSubtitle(e.target.value)}
+                    placeholder="I help businesses streamline operations through custom web applications..."
+                    className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none placeholder-gray-600 leading-relaxed resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 font-sans">
+                  <label className="font-mono text-[10px] uppercase text-gray-400">Detailed About Bio</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={siteBio}
+                    onChange={(e) => setSiteBio(e.target.value)}
+                    placeholder="Experienced full-stack developer and solution architect specialized..."
+                    className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none placeholder-gray-600 leading-relaxed resize-none"
+                  />
+                </div>
+
+                <div className="border-t border-white/5 pt-6 my-2">
+                  <h3 className="font-display font-medium text-xs text-indigo-400 mb-4 uppercase tracking-wider">Performance Statistics</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Projects Done</label>
+                      <input
+                        type="text"
+                        value={siteCompletedProjects}
+                        onChange={(e) => setSiteCompletedProjects(e.target.value)}
+                        placeholder="45+"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Automized Pipelines</label>
+                      <input
+                        type="text"
+                        value={siteProcessesAutomated}
+                        onChange={(e) => setSiteProcessesAutomated(e.target.value)}
+                        placeholder="110+"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Tech Modules</label>
+                      <input
+                        type="text"
+                        value={siteTechStackModules}
+                        onChange={(e) => setSiteTechStackModules(e.target.value)}
+                        placeholder="24+"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Hours Saved / Month</label>
+                      <input
+                        type="text"
+                        value={siteHoursShaved}
+                        onChange={(e) => setSiteHoursShaved(e.target.value)}
+                        placeholder="340h"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-6 my-2">
+                  <h3 className="font-display font-medium text-xs text-indigo-400 mb-4 uppercase tracking-wider">Direct Channels & Links</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Public Contact Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={siteEmail}
+                        onChange={(e) => setSiteEmail(e.target.value)}
+                        placeholder="ramachandran85966@gmail.com"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">Direct Telephone Number</label>
+                      <input
+                        type="text"
+                        required
+                        value={sitePhone}
+                        onChange={(e) => setSitePhone(e.target.value)}
+                        placeholder="+91 9080347710"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">WhatsApp Mobile API</label>
+                      <input
+                        type="text"
+                        required
+                        value={siteWhatsapp}
+                        onChange={(e) => setSiteWhatsapp(e.target.value)}
+                        placeholder="+91 9080347710"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">LinkedIn Profile URL</label>
+                      <input
+                        type="text"
+                        required
+                        value={siteLinkedin}
+                        onChange={(e) => setSiteLinkedin(e.target.value)}
+                        placeholder="https://linkedin.com/in/username"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 font-sans">
+                      <label className="font-mono text-[10px] text-gray-400">GitHub Profile URL</label>
+                      <input
+                        type="text"
+                        required
+                        value={siteGithub}
+                        onChange={(e) => setSiteGithub(e.target.value)}
+                        placeholder="https://github.com/username"
+                        className="bg-neutral-900/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-mono focus:border-brand-purple/40 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex gap-4 justify-end">
+                  <button
+                    type="submit"
+                    disabled={settingsSaving}
+                    className="px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-display font-semibold text-xs tracking-wider uppercase transition-colors shadow-lg shadow-indigo-600/20 cursor-pointer"
+                  >
+                    {settingsSaving ? "Updating Profile..." : "Publish Brand Profile"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
         )}
 
       </main>

@@ -12,7 +12,7 @@ export default function Navbar() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const location = useLocation();
 
-  // Theme hook
+  // Active theme preference controller
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("site-theme") || "dark";
@@ -73,7 +73,7 @@ export default function Navbar() {
   const initialLetter = displayName.charAt(0);
 
   return (
-    <header className="sticky top-0 z-50 w-full px-4 pt-4 pb-2">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full px-4 pt-4 pb-2">
       <nav className="mx-auto max-w-[1580px] w-full rounded-full bg-dark-card/65 backdrop-blur-md border border-white/8 p-2 px-6 flex items-center justify-between shadow-2xl">
         <Link to="/" className="flex items-center gap-3 font-display font-medium text-lg leading-none tracking-tight group">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-500/20 duration-300 group-hover:scale-105">

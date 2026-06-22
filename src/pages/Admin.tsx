@@ -68,6 +68,7 @@ import {
 } from "lucide-react";
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   
@@ -320,7 +321,7 @@ export default function Admin() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.hash = "";
+    navigate("/portfolio");
   };
 
   // ------------------- CMS WRITING SUBMISSIONS -------------------

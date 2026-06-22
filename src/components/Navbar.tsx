@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth, getSiteSettings } from "../services/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { Menu, X, Command, Terminal, LogOut, Code, Sun, Moon } from "lucide-react";
@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { SiteSettings } from "../types";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -54,7 +55,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      window.location.href = "/";
+      navigate("/portfolio");
     } catch (e) {
       console.error("Signout error", e);
     }

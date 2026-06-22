@@ -61,7 +61,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="w-full relative px-6 md:px-8 max-w-7xl mx-auto py-12 md:py-20">
+    <div className="w-full relative px-6 md:px-8 max-w-[1580px] mx-auto py-12 md:py-20">
       
       {/* Page Title */}
       <section className="flex flex-col items-start gap-5 mb-12">

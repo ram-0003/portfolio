@@ -77,7 +77,7 @@ export default function Home() {
       <div className="absolute top-[40%] right-[10%] w-96 h-96 rounded-full bg-brand-purple/5 blur-3xl -z-10 pointer-events-none"></div>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-16 md:pt-32 md:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-7xl mx-auto">
+      <section className="pt-20 pb-16 md:pt-32 md:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-[1580px] mx-auto">
         <div className="lg:col-span-7 flex flex-col items-start gap-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/8 backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-brand-cyan animate-ping"></span>
@@ -137,7 +137,7 @@ export default function Home() {
       </section>
 
       {/* Stats Counter Row */}
-      <section className="py-12 bg-dark-card/25 backdrop-blur-md rounded-3xl border border-white/5 max-w-7xl mx-auto my-12">
+      <section className="py-12 bg-dark-card/25 backdrop-blur-md rounded-3xl border border-white/5 max-w-[1580px] mx-auto my-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-white/5">
           {stats.map((stat, i) => {
             const Icon = stat.icon;
@@ -153,7 +153,7 @@ export default function Home() {
       </section>
 
       {/* Services Showcase */}
-      <section className="py-20 max-w-7xl mx-auto">
+      <section className="py-20 max-w-[1580px] mx-auto">
         <div className="text-center flex flex-col items-center gap-4 mb-16">
           <h2 className="font-display font-bold text-3xl sm:text-4xl text-white tracking-tight">
             Engineered Capabilities
@@ -197,7 +197,7 @@ export default function Home() {
 
       {/* Featured Project Showcase */}
       {WriteJadhag && (
-        <section className="py-20 max-w-7xl mx-auto border-t border-white/5">
+        <section className="py-20 max-w-[1580px] mx-auto border-t border-white/5">
           <div className="mb-12">
             <span className="font-mono text-xs uppercase tracking-widest text-brand-cyan mb-2 block">Featured System</span>
             <h2 className="font-display font-bold text-3xl sm:text-4xl text-white tracking-tight">
@@ -250,7 +250,7 @@ export default function Home() {
       )}
 
       {/* Technology Showcase Row */}
-      <section className="py-20 border-t border-white/5 max-w-7xl mx-auto">
+      <section className="py-20 border-t border-white/5 max-w-[1580px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-4 flex flex-col justify-center items-start gap-4">
             <div className="p-2 rounded-2xl bg-white/5 border border-white/8 text-brand-purple">
@@ -276,7 +276,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24 max-w-7xl mx-auto border-t border-white/5 text-center flex flex-col items-center gap-6">
+      <section className="py-24 max-w-[1580px] mx-auto border-t border-white/5 text-center flex flex-col items-center gap-6">
         <div className="w-16 h-16 rounded-3xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 animate-bounce">
           <Sparkles className="w-6 h-6" />
         </div>

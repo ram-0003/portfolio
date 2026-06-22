@@ -34,7 +34,7 @@ export default function Services() {
   }
 
   return (
-    <div className="w-full relative px-6 md:px-8 max-w-7xl mx-auto py-12 md:py-20">
+    <div className="w-full relative px-6 md:px-8 max-w-[1580px] mx-auto py-12 md:py-20">
       <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] rounded-full bg-brand-cyan/5 blur-3xl -z-10 pointer-events-none"></div>
 
       {/* Header section */}

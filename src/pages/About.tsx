@@ -85,7 +85,7 @@ export default function About() {
   }
 
   return (
-    <div className="w-full relative px-6 md:px-8 max-w-7xl mx-auto py-12 md:py-20">
+    <div className="w-full relative px-6 md:px-8 max-w-[1580px] mx-auto py-12 md:py-20">
       
       {/* Intro block */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">

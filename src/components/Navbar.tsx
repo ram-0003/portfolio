@@ -2,13 +2,31 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { auth } from "../services/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
-import { Menu, X, Command, Terminal, LogOut, Code } from "lucide-react";
+import { Menu, X, Command, Terminal, LogOut, Code, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const location = useLocation();
+
+  // Theme hook
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("site-theme") || "dark";
+    }
+    return "dark";
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("site-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -74,6 +92,15 @@ export default function Navbar() {
 
         {/* Action button */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/5 transition-all cursor-pointer flex items-center justify-center duration-200"
+            title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4 text-brand-cyan" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+          </button>
+
           {user ? (
             <div className="flex items-center gap-2">
               <Link
@@ -103,6 +130,15 @@ export default function Navbar() {
 
         {/* Mobile menu toggle */}
         <div className="flex items-center gap-2 md:hidden">
+          {/* Mobile Theme Toggle Button */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/5 transition-all cursor-pointer flex items-center justify-center mr-1"
+            title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+          >
+            {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-brand-cyan" /> : <Moon className="w-3.5 h-3.5 text-indigo-500" />}
+          </button>
+
           {user && (
             <Link
               to="/admin"

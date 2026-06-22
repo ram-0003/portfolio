@@ -71,7 +71,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="w-full relative px-6 md:px-8 max-w-7xl mx-auto py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+    <div className="w-full relative px-6 md:px-8 max-w-[1580px] mx-auto py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
       <div className="absolute top-[20%] left-[10%] w-96 h-96 rounded-full bg-brand-cyan/5 blur-3xl -z-10 pointer-events-none"></div>
 
       {/* Left block Info column */}

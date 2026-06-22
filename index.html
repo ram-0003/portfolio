@@ -3,7 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <script>
+      (function() {
+        try {
+          const t = localStorage.getItem("site-theme") || "dark";
+          if (t === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="description" content="Portfolio of Ramachandran S - Expert custom Web Applications and Workflow Automations. Shaving hours off manual repetitive operations using React, Node.js, and advanced AI agent pipelines." />
+    <meta name="keywords" content="Ramachandran S, web developer, workflow automation, contract developer, n8n, React Developer, AI engineering, fullstack developer, software engineer, South India, portfolio" />
+    <meta name="author" content="Ramachandran S" />
+    
+    <!-- OpenGraph (Facebook, LinkedIn, Discord) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ramachandran S | Custom Web Applications & Workflow Automations" />
+    <meta property="og:description" content="Replace manual redundant operations with intelligent, tailored software. Save hours every month using expert React development and high-productivity automated pipelines." />
+    <meta property="og:image" content="/favicon.svg" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ramachandran S | Custom Web Applications & Workflow Automations" />
+    <meta name="twitter:description" content="Replace manual redundant operations with intelligent, tailored software. Save hours every month using expert React development and high-productivity automated pipelines." />
+    <meta name="twitter:image" content="/favicon.svg" />
+
+    <!-- Site Icon Favicon links -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.svg" type="image/svg+xml" />
+    
+    <title>Ramachandran S | Web Applications & Workflow Automations</title>
   </head>
   <body>
     <div id="root"></div>

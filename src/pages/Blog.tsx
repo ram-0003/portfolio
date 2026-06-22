@@ -63,7 +63,7 @@ export default function Blog() {
   }
 
   return (
-    <div className="w-full relative px-6 md:px-8 max-w-7xl mx-auto py-12 md:py-20">
+    <div className="w-full relative px-6 md:px-8 max-w-[1580px] mx-auto py-12 md:py-20">
       
       {/* Blog Hero Heading */}
       <section className="flex flex-col items-start gap-5 mb-12">

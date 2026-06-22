@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -20,7 +20,7 @@ import BlogPostDetail from "./pages/BlogPostDetail";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 
-// ScrollToTop handles resetting viewport margins on routes shifts
+// ScrollToTop handles resetting viewport margins on route shifts
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -33,10 +33,10 @@ function ScrollToTop() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       {/* Scroll to Top helper */}
       <ScrollToTop />
-      
+
       {/* Global AI Inspired Background Particle Element */}
       <ParticleBackground />
 
@@ -62,6 +62,6 @@ export default function App() {
         {/* Global systems footer */}
         <Footer />
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

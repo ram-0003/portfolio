@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "A showcase project in Ramachandran S's developer portfolio managed via CMS.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "content": { "type": "string" },
+        "features": { "type": "array" },
+        "challenges": { "type": "string" },
+        "results": { "type": "string" },
+        "demoUrl": { "type": "string" },
+        "githubUrl": { "type": "string" },
+        "images": { "type": "array" },
+        "techStack": { "type": "array" },
+        "category": { "type": "string" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "description", "techStack", "category", "featured"]
+    },
+    "BlogPost": {
+      "title": "BlogPost",
+      "description": "A technical article, tutorial, or breakdown published on the blog.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "summary": { "type": "string" },
+        "content": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array" },
+        "readingTime": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "summary", "content", "status", "createdAt"]
+    },
+    "CaseStudy": {
+      "title": "CaseStudy",
+      "description": "An agency-style detailed breakdown of a problem, process, and solution.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "client": { "type": "string" },
+        "description": { "type": "string" },
+        "problem": { "type": "string" },
+        "solution": { "type": "string" },
+        "process": { "type": "string" },
+        "results": { "type": "string" },
+        "lessons": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "images": { "type": "array" },
+        "techStack": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "description", "problem", "solution", "process", "results"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A service offer details (benefits, techStack, and use cases).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "icon": { "type": "string" },
+        "description": { "type": "string" },
+        "benefits": { "type": "array" },
+        "techStack": { "type": "array" },
+        "useCases": { "type": "array" },
+        "order": { "type": "integer" }
+      },
+      "required": ["title", "description", "benefits", "techStack", "useCases"]
+    },
+    "Skill": {
+      "title": "Skill",
+      "description": "A technology key capability categorized for display.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "level": { "type": "integer" },
+        "order": { "type": "integer" }
+      },
+      "required": ["name", "category", "level"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "An inquiry captured from the lead submission contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["unread", "read"] }
+      },
+      "required": ["name", "email", "message", "createdAt", "status"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global settings for hero texts, bio, social links.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "bio": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "github": { "type": "string" }
+      },
+      "required": ["name", "title", "subtitle"]
+    },
+    "SeoSettings": {
+      "title": "SeoSettings",
+      "description": "SEO details for each route/page.",
+      "type": "object",
+      "properties": {
+        "page": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "keywords": { "type": "string" },
+        "ogImage": { "type": "string" }
+      },
+      "required": ["page", "title", "description"]
+    },
+    "Media": {
+      "title": "Media",
+      "description": "Uploaded image file paths stored in the portfolio.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string" },
+        "size": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "url", "type", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Showcase projects of Ramachandran S."
+    },
+    "/blogPosts/{postId}": {
+      "schema": { "$ref": "#/entities/BlogPost" },
+      "description": "Developer tutorials & announcements."
+    },
+    "/caseStudies/{studyId}": {
+      "schema": { "$ref": "#/entities/CaseStudy" },
+      "description": "In-depth agency-style solution summaries."
+    },
+    "/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/Service" },
+      "description": "Offer details for clients looking to streamline workflows."
+    },
+    "/skills/{skillId}": {
+      "schema": { "$ref": "#/entities/Skill" },
+      "description": "Technical level indicators."
+    },
+    "/contactMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/ContactMessage" },
+      "description": "Inbound potential lead contacts."
+    },
+    "/siteSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Editable homepage headers and settings details."
+    },
+    "/seoSettings/{seoId}": {
+      "schema": { "$ref": "#/entities/SeoSettings" },
+      "description": "Per-page SEO search metadata tags."
+    },
+    "/media/{mediaId}": {
+      "schema": { "$ref": "#/entities/Media" },
+      "description": "Metadata listing of images uploaded."
+    }
+  }
+}

@@ -26,7 +26,8 @@ import {
   deleteSkill, 
   getContactMessages, 
   updateContactMessage, 
-  deleteContactMessage 
+  deleteContactMessage,
+  uploadImage
 } from "../services/firebase";
 import { 
   onAuthStateChanged, 
@@ -44,6 +45,7 @@ import {
   ContactMessage,
   SiteSettings
 } from "../types";
+import profilePhoto from "../assets/images/profile_photo_1782095816672.jpg";
 import { 
   Terminal, 
   Cpu, 
@@ -169,10 +171,20 @@ export default function Admin() {
   };
 
   // Forms state variables
-  // Uploaded Image base64 caching states
+  // Uploaded Image base64 caching states / Existing image URL states
   const [projUploadImg, setProjUploadImg] = useState("");
   const [blogUploadImg, setBlogUploadImg] = useState("");
   const [caseUploadImg, setCaseUploadImg] = useState("");
+
+  const [siteProfileFile, setSiteProfileFile] = useState<File | null>(null);
+  const [projUploadFile, setProjUploadFile] = useState<File | null>(null);
+  const [blogUploadFile, setBlogUploadFile] = useState<File | null>(null);
+  const [caseUploadFile, setCaseUploadFile] = useState<File | null>(null);
+
+  // Migration & Self-Healing states
+  const [migrationLogs, setMigrationLogs] = useState<string[]>([]);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migResultMsg, setMigResultMsg] = useState<string | null>(null);
 
   // Project Form
   const [projTitle, setProjTitle] = useState("");
@@ -318,6 +330,19 @@ export default function Admin() {
     e.preventDefault();
     if (!projTitle) return;
 
+    let finalImageUrl = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200";
+
+    if (projUploadFile) {
+      try {
+        finalImageUrl = await uploadImage(projUploadFile, `projects/${Date.now()}_${projUploadFile.name}`);
+      } catch (err) {
+        console.error("Storage upload failed for project image:", err);
+        alert("Failed to upload image to Firebase Storage. Saving with default placeholder.");
+      }
+    } else if (projUploadImg) {
+      finalImageUrl = projUploadImg;
+    }
+
     const payload: Omit<Project, "id"> = {
       title: projTitle,
       type: projType,
@@ -328,7 +353,7 @@ export default function Admin() {
       results: projResults,
       demoUrl: projDemo,
       githubUrl: projGit,
-      images: projUploadImg ? [projUploadImg] : ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200"],
+      images: [finalImageUrl],
       techStack: projStack.split(",").map(t => t.trim()).filter(Boolean),
       category: projCategory,
       featured: projFeatured,
@@ -363,6 +388,7 @@ export default function Admin() {
     setProjCategory("Workflow Automation");
     setProjFeatured(false);
     setProjUploadImg("");
+    setProjUploadFile(null);
     setEditingItemID(null);
     setShowCreateForm(false);
   };
@@ -395,12 +421,25 @@ export default function Admin() {
     e.preventDefault();
     if (!blogTitle || !blogSlug) return;
 
+    let finalImageUrl = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200";
+
+    if (blogUploadFile) {
+      try {
+        finalImageUrl = await uploadImage(blogUploadFile, `blogs/${Date.now()}_${blogUploadFile.name}`);
+      } catch (err) {
+        console.error("Storage upload failed for blog image:", err);
+        alert("Failed to upload image to Storage. Saving blog with default placeholder.");
+      }
+    } else if (blogUploadImg) {
+      finalImageUrl = blogUploadImg;
+    }
+
     const payload: Omit<BlogPost, "id"> = {
       title: blogTitle,
       slug: blogSlug,
       summary: blogSummary,
       content: blogContent,
-      coverImage: blogUploadImg || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200",
+      coverImage: finalImageUrl,
       category: blogCat,
       tags: blogTags.split(",").map(t => t.trim()).filter(Boolean),
       readingTime: blogReadingTime,
@@ -429,6 +468,7 @@ export default function Admin() {
     setBlogContent("");
     setBlogImage("");
     setBlogUploadImg("");
+    setBlogUploadFile(null);
     setBlogCat("Workflow Automation");
     setBlogTags("");
     setBlogReadingTime("4 min read");
@@ -462,6 +502,19 @@ export default function Admin() {
     e.preventDefault();
     if (!caseTitle || !caseSlug) return;
 
+    let finalImageUrl = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200";
+
+    if (caseUploadFile) {
+      try {
+        finalImageUrl = await uploadImage(caseUploadFile, `cases/${Date.now()}_${caseUploadFile.name}`);
+      } catch (err) {
+        console.error("Storage upload failed for case study image:", err);
+        alert("Failed to upload image to Storage. Saving case study with default placeholder.");
+      }
+    } else if (caseUploadImg) {
+      finalImageUrl = caseUploadImg;
+    }
+
     const payload: Omit<CaseStudy, "id"> = {
       title: caseTitle,
       slug: caseSlug,
@@ -472,7 +525,7 @@ export default function Admin() {
       process: caseProcess,
       results: caseResults,
       lessons: caseLessons,
-      coverImage: caseUploadImg || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200",
+      coverImage: finalImageUrl,
       images: [],
       techStack: caseStack.split(",").map(t => t.trim()).filter(Boolean),
       createdAt: new Date().toISOString()
@@ -503,6 +556,7 @@ export default function Admin() {
     setCaseLessons("");
     setCaseStack("");
     setCaseUploadImg("");
+    setCaseUploadFile(null);
     setEditingItemID(null);
     setShowCreateForm(false);
   };
@@ -648,6 +702,19 @@ export default function Admin() {
     setSettingsError("");
     setSettingsSuccess(false);
 
+    let finalProfileImg = siteProfileImg;
+
+    if (siteProfileFile) {
+      try {
+        finalProfileImg = await uploadImage(siteProfileFile, `profiles/${Date.now()}_${siteProfileFile.name}`);
+      } catch (err) {
+        console.error("Storage upload failed for site profile image:", err);
+        setSettingsError("Failed to upload profile photo to storage.");
+        setSettingsSaving(false);
+        return;
+      }
+    }
+
     const payload: SiteSettings = {
       name: siteName,
       title: siteTitle,
@@ -659,7 +726,7 @@ export default function Admin() {
       linkedin: siteLinkedin,
       github: siteGithub,
       role: siteRole,
-      profileImage: siteProfileImg,
+      profileImage: finalProfileImg,
       completedProjects: siteCompletedProjects,
       processesAutomated: siteProcessesAutomated,
       techStackModules: siteTechStackModules,
@@ -669,6 +736,7 @@ export default function Admin() {
     try {
       await updateSiteSettings(payload);
       setSettingsSuccess(true);
+      setSiteProfileFile(null);
       setTimeout(() => setSettingsSuccess(false), 4000);
       loadCmsData();
     } catch (err) {
@@ -676,6 +744,163 @@ export default function Admin() {
       setSettingsError("Failed to save settings. Please try again.");
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  const downloadImageAsBlob = async (url: string): Promise<Blob> => {
+    if (url.startsWith("data:")) {
+      const arr = url.split(",");
+      const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} when trying to download ${url}`);
+    }
+    return await res.blob();
+  };
+
+  const handleMigrateAssets = async () => {
+    setIsMigrating(true);
+    setMigrationLogs(["Initializing diagnostics and asset scan..."]);
+    setMigResultMsg(null);
+
+    const log = (msg: string) => {
+      setMigrationLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+    };
+
+    try {
+      // 1. Migrate Profile Photo
+      log("Analyzing platform site configurations...");
+      const sSettings = await getSiteSettings();
+
+      // Check profilePhoto
+      const currentProfilePhoto = sSettings.profileImage || "";
+      const isProfileOnStorage = currentProfilePhoto.includes("firebasestorage.googleapis.com") || currentProfilePhoto.includes(".appspot.com");
+      
+      if (!isProfileOnStorage) {
+        log(`Profile image is located at source: "${currentProfilePhoto || "None (Default local)"}". Preparing for transfer.`);
+        try {
+          const urlToFetch = currentProfilePhoto || profilePhoto;
+          log(`Fetching profile blob from: ${urlToFetch}`);
+          const blob = await downloadImageAsBlob(urlToFetch);
+          log("Upload process starting for Profile image...");
+          const newUrl = await uploadImage(blob, `profiles/migrated_profile_photo_${Date.now()}.jpg`);
+          log(`Success! Profile image synchronized to Storage: ${newUrl}`);
+          sSettings.profileImage = newUrl;
+          await updateSiteSettings(sSettings);
+          setSiteProfileImg(newUrl);
+          log("Settings database synced securely with Storage reference.");
+        } catch (err: any) {
+          log(`⚠️ Profile photo migrate status skipped: ${err.message || err}`);
+        }
+      } else {
+        log("✅ Profile image already securely hosted on Firebase Storage!");
+      }
+
+      // 2. Migrate Projects cover images and list images
+      log("Scanning projects collections...");
+      const loadedProjects = await getProjects();
+      for (const project of loadedProjects) {
+        if (!project.id) continue;
+        let pUpdated = false;
+        
+        const origImages = project.images || [];
+        const newImages: string[] = [];
+        
+        for (let i = 0; i < origImages.length; i++) {
+          const imgUrl = origImages[i];
+          const isImgOnStorage = imgUrl.includes("firebasestorage.googleapis.com") || imgUrl.includes(".appspot.com");
+          if (!isImgOnStorage) {
+            log(`Project "${project.title}" Image [${i+1}] is "${imgUrl}". Fetching...`);
+            try {
+              const blob = await downloadImageAsBlob(imgUrl);
+              const newUrl = await uploadImage(blob, `projects/migrated_${project.id}_img_${i}_${Date.now()}.jpg`);
+              newImages.push(newUrl);
+              pUpdated = true;
+              log(`Uploaded Project Image to Storage.`);
+            } catch (err: any) {
+              log(`⚠️ Skipped Project image [${i+1}]: ${err.message || err}`);
+              newImages.push(imgUrl);
+            }
+          } else {
+            newImages.push(imgUrl);
+          }
+        }
+
+        if (pUpdated) {
+          log(`Saving migrated image references for Project "${project.title}"`);
+          await updateProject(project.id, { images: newImages });
+        }
+      }
+      log("✅ Projects scan completed.");
+
+      // 3. Migrate Blog Posts
+      log("Scanning blog posts collections...");
+      const loadedBlogs = await getBlogPosts();
+      for (const blog of loadedBlogs) {
+        if (!blog.id) continue;
+        const cover = blog.coverImage || "";
+        const isCoverOnStorage = cover.includes("firebasestorage.googleapis.com") || cover.includes(".appspot.com");
+        
+        if (cover && !isCoverOnStorage) {
+          log(`Blog Post "${blog.title}" Cover is external: "${cover}". Pulling asset...`);
+          try {
+            const blob = await downloadImageAsBlob(cover);
+            const newUrl = await uploadImage(blob, `blogs/migrated_${blog.id}_${Date.now()}.jpg`);
+            log("Saving cover image to Firebase Storage.");
+            await updateBlogPost(blog.id, { coverImage: newUrl });
+            log(`✅ Synced Blog post "${blog.title}" Cover Image.`);
+          } catch (err: any) {
+            log(`⚠️ Skipped Blog Cover: ${err.message || err}`);
+          }
+        }
+      }
+      log("✅ Blogs scan completed.");
+
+      // 4. Migrate Case Studies
+      log("Scanning case studies collections...");
+      const loadedCases = await getCaseStudies();
+      for (const item of loadedCases) {
+        if (!item.id) continue;
+        const cover = item.coverImage || "";
+        const isCoverOnStorage = cover.includes("firebasestorage.googleapis.com") || cover.includes(".appspot.com");
+        
+        if (cover && !isCoverOnStorage) {
+          log(`Case Study "${item.title}" Cover is external: "${cover}". Pulling asset...`);
+          try {
+            const blob = await downloadImageAsBlob(cover);
+            const newUrl = await uploadImage(blob, `cases/migrated_${item.id}_${Date.now()}.jpg`);
+            log("Saving cover image to Firebase Storage.");
+            await updateCaseStudy(item.id, { coverImage: newUrl });
+            log(`✅ Synced Case Study "${item.title}" Cover Image.`);
+          } catch (err: any) {
+            log(`⚠️ Skipped Case Study Cover: ${err.message || err}`);
+          }
+        }
+      }
+      log("✅ Case studies scan completed.");
+
+      log("Deep synchronization finalized successfully!");
+      setMigResultMsg("All asset images in database successfully migrated and now point to your permanent Firebase Storage bucket!");
+      await loadCmsData();
+    } catch (err: any) {
+      console.error("Migration error:", err);
+      if (err.message && (err.message.includes("permission") || err.message.includes("unauthorized") || err.code === "storage/unauthorized" || (err.message && err.message.toLowerCase().includes("unauthorized")))) {
+        setMigResultMsg("Permission Denied: Your Firebase Storage security rules are currently restricting write operations. Please configure storage write permissions in the Firebase console first (see troubleshooting notes below).");
+        log("❌ Migration aborted because of Firebase Storage authorization failure.");
+      } else {
+        setMigResultMsg(`Migration failed: ${err.message || err}`);
+        log("❌ Migration aborted due to an error.");
+      }
+    } finally {
+      setIsMigrating(false);
     }
   };
 
@@ -1019,6 +1244,7 @@ export default function Admin() {
                       e.currentTarget.classList.remove("border-brand-cyan/60");
                       const file = e.dataTransfer.files?.[0];
                       if (file) {
+                        setProjUploadFile(file);
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setProjUploadImg(reader.result as string);
@@ -1037,6 +1263,7 @@ export default function Admin() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          setProjUploadFile(file);
                           const reader = new FileReader();
                           reader.onloadend = () => {
                             setProjUploadImg(reader.result as string);
@@ -1050,7 +1277,7 @@ export default function Admin() {
                         <img src={projUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
                         <button 
                           type="button" 
-                          onClick={(e) => { e.stopPropagation(); setProjUploadImg(""); }}
+                          onClick={(e) => { e.stopPropagation(); setProjUploadImg(""); setProjUploadFile(null); }}
                           className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full text-xs shadow-md transition-colors"
                         >
                           <X className="w-3" />
@@ -1190,6 +1417,7 @@ export default function Admin() {
                       e.currentTarget.classList.remove("border-brand-cyan/60");
                       const file = e.dataTransfer.files?.[0];
                       if (file) {
+                        setBlogUploadFile(file);
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setBlogUploadImg(reader.result as string);
@@ -1208,6 +1436,7 @@ export default function Admin() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          setBlogUploadFile(file);
                           const reader = new FileReader();
                           reader.onloadend = () => {
                             setBlogUploadImg(reader.result as string);
@@ -1221,7 +1450,7 @@ export default function Admin() {
                         <img src={blogUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
                         <button 
                           type="button" 
-                          onClick={(e) => { e.stopPropagation(); setBlogUploadImg(""); }}
+                          onClick={(e) => { e.stopPropagation(); setBlogUploadImg(""); setBlogUploadFile(null); }}
                           className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full text-xs shadow-md transition-colors"
                         >
                           <X className="w-3" />
@@ -1381,6 +1610,7 @@ export default function Admin() {
                       e.currentTarget.classList.remove("border-brand-cyan/60");
                       const file = e.dataTransfer.files?.[0];
                       if (file) {
+                        setCaseUploadFile(file);
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setCaseUploadImg(reader.result as string);
@@ -1399,6 +1629,7 @@ export default function Admin() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          setCaseUploadFile(file);
                           const reader = new FileReader();
                           reader.onloadend = () => {
                             setCaseUploadImg(reader.result as string);
@@ -1412,7 +1643,7 @@ export default function Admin() {
                         <img src={caseUploadImg} alt="Preview" className="max-h-32 object-contain rounded-lg border border-white/15" />
                         <button 
                           type="button" 
-                          onClick={(e) => { e.stopPropagation(); setCaseUploadImg(""); }}
+                          onClick={(e) => { e.stopPropagation(); setCaseUploadImg(""); setCaseUploadFile(null); }}
                           className="absolute -top-2 -right-2 bg-red-400 hover:bg-red-500 text-white p-1 rounded-full text-xs shadow-md transition-colors"
                         >
                           <X className="w-3" />
@@ -1702,7 +1933,8 @@ export default function Admin() {
 
         {/* ------------------- TAB 8: SETTINGS ------------------- */}
         {activeTab === "settings" && (
-          <form onSubmit={handleSaveSettings} className="flex flex-col gap-6 animate-fade-in">
+          <>
+            <form onSubmit={handleSaveSettings} className="flex flex-col gap-6 animate-fade-in">
             <div className="border-b border-white/5 pb-4 flex justify-between items-center flex-wrap gap-4">
               <div>
                 <h2 className="font-display font-bold text-xl text-white">Profile & Platform Settings</h2>
@@ -1748,6 +1980,7 @@ export default function Admin() {
                     e.currentTarget.classList.remove("border-brand-cyan/60");
                     const file = e.dataTransfer.files?.[0];
                     if (file) {
+                      setSiteProfileFile(file);
                       const reader = new FileReader();
                       reader.onloadend = () => {
                         setSiteProfileImg(reader.result as string);
@@ -1766,6 +1999,7 @@ export default function Admin() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        setSiteProfileFile(file);
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           setSiteProfileImg(reader.result as string);
@@ -1801,7 +2035,7 @@ export default function Admin() {
                 {siteProfileImg && (
                   <button
                     type="button"
-                    onClick={() => setSiteProfileImg("")}
+                    onClick={() => { setSiteProfileImg(""); setSiteProfileFile(null); }}
                     className="text-center font-mono text-[10px] text-red-400 hover:text-red-300 py-1 cursor-pointer"
                   >
                     Remove and use Fallback Image
@@ -1996,7 +2230,103 @@ export default function Admin() {
               </div>
             </div>
           </form>
-        )}
+
+          {/* ------------------- DIAGNOSTICS & STORAGE SYNC CENTER ------------------- */}
+          <div className="mt-12 pt-10 border-t border-white/5 flex flex-col gap-6 animate-fade-in">
+            <div>
+              <h3 className="font-display font-bold text-lg text-white">Firebase Storage & Assets Diagnostics Center</h3>
+              <p className="text-gray-500 text-xs font-mono">Verify and keep all static portfolio files & image uploads stored directly inside your safe Firebase Storage:</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Control Panel */}
+              <div className="lg:col-span-5 flex flex-col gap-4 bg-neutral-900/40 border border-white/5 rounded-2xl p-6">
+                <div className="flex flex-col gap-1">
+                  <span className="font-mono text-[10px] uppercase text-gray-500 font-semibold">Active Backend Details</span>
+                  <div className="text-xs text-gray-300 font-mono flex flex-col gap-1.5 mt-2 bg-black/30 p-3 rounded-lg border border-white/5">
+                    <div><strong className="text-indigo-400">Database ID:</strong> ai-studio-primary</div>
+                    <div><strong className="text-indigo-400">Storage Bucket:</strong> portfolio-cf549.firebasestorage.app</div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleMigrateAssets}
+                    disabled={isMigrating}
+                    className="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-brand-cyan text-xs font-mono font-semibold uppercase tracking-wider transition-all border border-brand-cyan/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isMigrating ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-t-transparent border-brand-cyan rounded-full animate-spin"></div>
+                        Syncing Active Assets...
+                      </>
+                    ) : (
+                      "Sync & Migrate Storage Assets"
+                    )}
+                  </button>
+                  <p className="text-[10px] text-zinc-500 leading-relaxed font-sans">
+                    Downloads any external or local Unsplash/asset images from projects, blogs, case studies, and your profile, and uploads them to your personal Firebase Storage bucket. Point-of-access database references will be automatically updated!
+                  </p>
+                </div>
+
+                {migResultMsg && (
+                  <div className={`p-4 rounded-xl text-xs font-mono font-medium leading-relaxed mt-2 ${
+                    migResultMsg.toLowerCase().includes("denied") || migResultMsg.toLowerCase().includes("failed") 
+                      ? "bg-red-500/10 border border-red-500/20 text-red-400" 
+                      : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                  }`}>
+                    {migResultMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Console System Output */}
+              <div className="lg:col-span-7 flex flex-col gap-2">
+                <span className="font-mono text-[10px] uppercase text-gray-400 font-semibold">Diagnostic Output Log</span>
+                <div className="bg-black/80 rounded-2xl p-5 border border-white/10 aspect-[16/9] lg:aspect-auto lg:h-[260px] overflow-y-auto font-mono text-[11px] text-zinc-400 flex flex-col gap-1 scrollbar-thin">
+                  {migrationLogs.length === 0 ? (
+                    <div className="text-zinc-600 italic">No output logs. Click "Sync & Migrate Storage Assets" to initiate diagnostic scanning.</div>
+                  ) : (
+                    migrationLogs.map((logStr, idx) => (
+                      <div key={idx} className={logStr.includes("✅") ? "text-emerald-400" : logStr.includes("⚠️") ? "text-amber-400 font-medium" : logStr.includes("❌") ? "text-red-400 font-bold" : ""}>
+                        {logStr}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Security Rules Help Center */}
+            <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-6 flex flex-col gap-4 mt-2 font-sans">
+              <div className="flex items-center gap-3 text-amber-500 font-display font-semibold text-sm">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                How to Fix Permission / Storage Unauthorized Errors in Firebase Console
+              </div>
+              <p className="text-gray-400 text-xs leading-relaxed max-w-4xl">
+                If the migration triggers an <strong>unauthorized (Permission Denied)</strong> exception, your Firebase project requires explicit Storage Rules updates. Since Storage security rules cannot be automatically deployed via API, follow these 3-step console instructions:
+              </p>
+              <ol className="list-decimal pl-5 text-gray-400 text-xs flex flex-col gap-2 mb-2">
+                <li>Open your Firebase Console dashboard at <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-brand-cyan hover:underline">https://console.firebase.google.com</a> and pick your active project.</li>
+                <li>In the sidebar, locate and select the <strong>Storage</strong> product, and then switch to the <strong>"Rules"</strong> tab.</li>
+                <li>Replace the existing rule blocks with the robust authenticated schema displayed below, and click the <strong>"Publish"</strong> button:</li>
+              </ol>
+              <pre className="bg-black/50 p-4 rounded-xl border border-white/5 text-[10px] text-zinc-300 font-mono overflow-x-auto leading-relaxed max-w-full">
+{`rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}`}
+              </pre>
+            </div>
+          </div>
+        </>
+      )}
 
       </main>
 

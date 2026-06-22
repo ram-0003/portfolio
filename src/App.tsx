@@ -40,7 +40,7 @@ export default function App() {
       {/* Global AI Inspired Background Particle Element */}
       <ParticleBackground />
 
-      <div className="flex flex-col min-h-screen text-gray-200 selection:bg-brand-cyan/30 selection:text-white">
+      <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden text-gray-200 selection:bg-brand-cyan/30 selection:text-white">
         {/* Floating Top Header bar */}
         <Navbar />
 

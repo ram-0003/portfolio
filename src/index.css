@@ -51,12 +51,16 @@
   }
 }
 
+html, body {
+  max-width: 100VW;
+  overflow-x: hidden;
+}
+
 /* Page transitions and general visual overrides */
 body {
   background-color: #050505;
   color: #e2e8f0;
   font-family: var(--font-sans);
-  overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

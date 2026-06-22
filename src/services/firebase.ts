@@ -21,6 +21,7 @@ import {
   getDocFromServer,
   where
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
   defaultSiteSettings, 
   defaultServices, 
@@ -36,6 +37,14 @@ import firebaseConfig from "../../firebase-applet-config.json";
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const storage = getStorage(app);
+
+// Uploads a standard File or Blob to Firebase Storage and returns the permanent secure download URL
+export async function uploadImage(file: File | Blob, filePath: string): Promise<string> {
+  const storageRef = ref(storage, filePath);
+  const snapshot = await uploadBytes(storageRef, file);
+  return await getDownloadURL(snapshot.ref);
+}
 
 // Helper to race a Firestore promise against a timeout.
 // This prevents slow network connections or offline status from blocking page rendering.

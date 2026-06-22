@@ -200,15 +200,15 @@ export default function Home() {
         <section className="py-20 max-w-[1580px] mx-auto border-t border-white/5">
           <div className="mb-12">
             <span className="font-mono text-xs uppercase tracking-widest text-brand-cyan mb-2 block">Featured System</span>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl text-white tracking-tight">
-              Spotlight: WriteJadhag
+            <h2 className="font-display font-bold text-3xl sm:text-4xl text-white tracking-tight font-medium">
+              Spotlight: {WriteJadhag.title}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-dark-card/45 rounded-3xl border border-white/5 overflow-hidden p-8 md:p-12">
             <div className="flex flex-col items-start gap-6">
               <span className="px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-mono text-xs">
-                {WriteJadhag.category}
+                {WriteJadhag.category || WriteJadhag.type}
               </span>
               <h3 className="font-display font-medium text-2xl sm:text-3xl text-white tracking-tight">
                 {WriteJadhag.title}
@@ -236,10 +236,10 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 group aspect-video">
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 group aspect-video bg-neutral-900/40">
               <img 
-                src="https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1200&auto=format&fit=crop" 
-                alt="WriteJadhag Astrological calculations" 
+                src={WriteJadhag.images?.[0] || "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1200&auto=format&fit=crop"} 
+                alt={`${WriteJadhag.title} System Showcase`} 
                 className="object-cover w-full h-full duration-700 group-hover:scale-103"
                 referrerPolicy="no-referrer"
               />
